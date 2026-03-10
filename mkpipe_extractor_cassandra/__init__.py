@@ -32,12 +32,17 @@ class CassandraExtractor(BaseExtractor, variant='cassandra'):
         if self.password:
             spark.conf.set('spark.cassandra.auth.password', self.password)
 
-        df = (
+        reader = (
             spark.read.format('org.apache.spark.sql.cassandra')
             .option('keyspace', self.keyspace)
             .option('table', table.name)
-            .load()
         )
+
+        if table.partitions_count:
+            split_size_mb = max(1, 512 // table.partitions_count)
+            spark.conf.set('spark.cassandra.input.split.size_in_mb', str(split_size_mb))
+
+        df = reader.load()
 
         write_mode = 'overwrite'
         last_point_value = None
