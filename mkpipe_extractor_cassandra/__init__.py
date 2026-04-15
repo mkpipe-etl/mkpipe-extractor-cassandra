@@ -44,6 +44,10 @@ class CassandraExtractor(BaseExtractor, variant='cassandra'):
 
         df = reader.load()
 
+        if not df.take(1):
+            logger.info({'table': table.target_name, 'status': 'no_new_data'})
+            return ExtractResult(df=None, write_mode='overwrite')
+
         write_mode = 'overwrite'
         last_point_value = None
 
@@ -52,6 +56,9 @@ class CassandraExtractor(BaseExtractor, variant='cassandra'):
                 from pyspark.sql import functions as F
                 df = df.filter(F.col(table.iterate_column) > last_point)
                 write_mode = 'append'
+                if not df.take(1):
+                    logger.info({'table': table.target_name, 'status': 'no_new_data'})
+                    return ExtractResult(df=None, write_mode=write_mode)
             row = df.agg({table.iterate_column: 'max'}).first()
             if row and row[0] is not None:
                 last_point_value = str(row[0])
