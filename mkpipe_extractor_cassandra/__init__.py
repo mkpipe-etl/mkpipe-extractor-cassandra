@@ -45,8 +45,8 @@ class CassandraExtractor(BaseExtractor, variant='cassandra'):
         df = reader.load()
 
         if not df.take(1):
-            logger.info({'table': table.target_name, 'status': 'no_new_data'})
-            return ExtractResult(df=None, write_mode='overwrite')
+            logger.info({'table': table.target_name, 'status': 'empty_source_initial_load'})
+            return ExtractResult(df=df, write_mode='overwrite')
 
         write_mode = 'overwrite'
         last_point_value = None
